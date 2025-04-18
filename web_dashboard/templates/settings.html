@@ -9,7 +9,7 @@
     <h1>Bot Settings</h1>
 
     <h2>Anti-Spam Settings</h2>
-    <form method="POST" action="{{ url_for('update_anti_spam') }}">
+    <form method="POST" action="{{ url_for('settings') }}">
         <label for="anti_spam_value">Enable Anti-Spam:</label>
         <input type="checkbox" name="anti_spam_value" value="True" {% if anti_spam == 'True' %} checked {% endif %}>
         <button type="submit">Save Settings</button>
