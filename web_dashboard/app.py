@@ -7,9 +7,9 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # MongoDB connection
-mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")  # Use the environment variable for MongoDB URI
+mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")  # Use environment variable for MongoDB URI
 client = MongoClient(mongo_uri)
-db = client.get_database()  # Connect to your database
+db = client.get_database('bot_settings')  # Specify your database name here
 
 # Route for homepage
 @app.route('/')
