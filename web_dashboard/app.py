@@ -1,37 +1,35 @@
-from flask import Flask, render_template, redirect, url_for, request, session
-import discord
-from discord.ext import commands
+from flask import Flask, render_template, request, redirect, url_for, session
 import os
-import pymongo
+from pymongo import MongoClient
 
+# Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY")  # Keep this secret key safe
+app.secret_key = os.urandom(24)
 
-# MongoDB setup
-client = pymongo.MongoClient(os.environ.get("MONGODB_URI"))
-db = client['discord_bot_db']
+# MongoDB connection
+mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")  # Use the environment variable for MongoDB URI
+client = MongoClient(mongo_uri)
+db = client.get_database()  # Connect to your database
 
-# Discord bot setup (Make sure to run your bot on a separate thread for the web dashboard)
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
+# Route for homepage
 @app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template('index.html')
 
-@app.route('/settings')
+# Route for settings page
+@app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    # Fetch any saved settings from MongoDB (e.g., anti-spam, auto roles)
-    anti_spam = db["settings"].find_one({"setting": "anti_spam"})["value"]
-    return render_template("settings.html", anti_spam=anti_spam)
-
-@app.route('/update_anti_spam', methods=["POST"])
-def update_anti_spam():
-    if request.method == "POST":
-        new_value = request.form.get("anti_spam_value")
-        db["settings"].update_one({"setting": "anti_spam"}, {"$set": {"value": new_value}}, upsert=True)
+    if request.method == 'POST':
+        anti_spam_value = request.form.get('anti_spam_value')
+        db.settings.update_one({"setting": "anti_spam"}, {"$set": {"value": anti_spam_value}}, upsert=True)
         return redirect(url_for('settings'))
 
+    # Retrieve current anti-spam setting
+    anti_spam = db.settings.find_one({"setting": "anti_spam"})
+    anti_spam_value = anti_spam['value'] if anti_spam else 'False'
+    
+    return render_template('settings.html', anti_spam=anti_spam_value)
+
+# Run the app
 if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True)
